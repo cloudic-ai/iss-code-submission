@@ -1,0 +1,14 @@
+# Ignore pychache
+__pycache__/
+
+# Ignore debug-images
+debug-images/
+
+# Ignore logs
+logs/
+
+# Ignore data
+data/
+
+# Ignore .vscode
+.vscode/
