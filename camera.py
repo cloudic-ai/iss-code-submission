@@ -1,7 +1,7 @@
 from os import listdir, makedirs, path
 from time import sleep
 from random import choice
-from cv2 import cvtColor, imread, imwrite, COLOR_BGR2RGB
+from cv2 import Mat, cvtColor, imread, imwrite, COLOR_BGR2RGB, COLOR_RGB2BGR
 from exceptions import DataFolderFull, ExecutionTimeExceeded
 from setup_logging import get_logger
 from datetime import datetime
@@ -49,6 +49,17 @@ def calculate_sleep_time(start_time: datetime, average_image_size: int):
     return sleep_time
 
 
+def check_night_image(image: Mat) -> bool:
+    # Calculate average brightness of image
+    avg_brightness = image.mean()
+    # Calculate brightest pixel in image
+    max_brightness = image.max()
+    # Calculate darkest pixel in image
+    min_brightness = image.min()
+
+    return avg_brightness < 50 and max_brightness < 100 and min_brightness < 50
+
+
 def get_image(start_time: datetime):
     """
     Get image from camera and save it to the data folder. Sleep until the data folder has enough space for the next image.
@@ -72,15 +83,17 @@ def get_image(start_time: datetime):
             # Get image from camera
             file_name = choice(listdir("debug-images"))
             image = cvtColor(
-                imread(f"debug-images/{file_name}"), COLOR_BGR2RGB)
+                imread(f"debug-images/{file_name}"), COLOR_RGB2BGR)
             logger.info(f"Image loaded from 'debug-images/{file_name}'")
+
+            print(check_night_image(image))
 
             time = datetime.now()
 
             # Save image to data folder
             makedirs("data/" + time.strftime("%Y-%m-%d_%H-%M-%S"))
             imwrite(
-                f"data/{time.strftime('%Y-%m-%d_%H-%M-%S')}/camera.jpg", image)
+                f"data/{time.strftime('%Y-%m-%d_%H-%M-%S')}/camera.jpg", cvtColor(image, COLOR_BGR2RGB))
             logger.info(
                 f"Image saved to 'data/{time.strftime('%Y-%m-%d_%H-%M-%S')}/camera.jpg'")
 
