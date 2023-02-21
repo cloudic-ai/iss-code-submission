@@ -26,7 +26,7 @@ def check_data_folder_space_remaining() -> int:
     return data_folder_space_remaining
 
 
-def calculate_sleep_time(start_time: datetime, average_image_size: int):
+def calculate_sleep_time(start_time: datetime, average_image_size: int) -> float:
     time_remaining = check_time_remaining(start_time)
 
     data_folder_space_remaining = check_data_folder_space_remaining()
@@ -44,23 +44,31 @@ def calculate_sleep_time(start_time: datetime, average_image_size: int):
         raise ExecutionTimeExceeded
 
     if sleep_time > time_remaining:
-        sleep_time = 0
+        sleep_time = 0.0
 
     return sleep_time
 
 
-def check_night_image(image: Mat) -> bool:
-    # Calculate average brightness of image
-    avg_brightness = image.mean()
-    # Calculate brightest pixel in image
-    max_brightness = image.max()
-    # Calculate darkest pixel in image
-    min_brightness = image.min()
+def is_night_image(cropped_image: Mat) -> bool:
+    # Calculate average brightness
+    avg_brightness = cropped_image.mean()
+    # Calculate brightest pixel value
+    max_brightness = cropped_image.max()
 
-    return avg_brightness < 50 and max_brightness < 100 and min_brightness < 50
+    return avg_brightness < 60 or max_brightness < 200
 
 
-def get_image(start_time: datetime):
+def get_debug_image() -> Mat:
+    # Get random image from debug-images folder
+    file_name = choice(listdir("debug-images"))
+    image = cvtColor(
+        imread(f"debug-images/{file_name}"), COLOR_RGB2BGR)
+    logger.info(f"Image loaded from 'debug-images/{file_name}'")
+
+    return image
+
+
+def get_image(start_time: datetime) -> None:
     """
     Get image from camera and save it to the data folder. Sleep until the data folder has enough space for the next image.
 
@@ -80,20 +88,27 @@ def get_image(start_time: datetime):
                     raise ExecutionTimeExceeded
                 sleep(1)
 
-            # Get image from camera
-            file_name = choice(listdir("debug-images"))
-            image = cvtColor(
-                imread(f"debug-images/{file_name}"), COLOR_RGB2BGR)
-            logger.info(f"Image loaded from 'debug-images/{file_name}'")
+            # Get image
+            image = get_debug_image()
 
-            print(check_night_image(image))
+            # Take a square with the edge length equal to the height of the image from the center of the image
+            y1 = 0
+            y2 = image.shape[0]
+            x1 = int((image.shape[1] - image.shape[0]) / 2)
+            x2 = x1 + image.shape[0]
+            image_cropped = image[y1:y2, x1:x2]
 
             time = datetime.now()
+
+            if is_night_image(image_cropped):
+                logger.info("Night image detected")
+                sleep(1)
+                continue
 
             # Save image to data folder
             makedirs("data/" + time.strftime("%Y-%m-%d_%H-%M-%S"))
             imwrite(
-                f"data/{time.strftime('%Y-%m-%d_%H-%M-%S')}/camera.jpg", cvtColor(image, COLOR_BGR2RGB))
+                f"data/{time.strftime('%Y-%m-%d_%H-%M-%S')}/camera.jpg", cvtColor(image_cropped, COLOR_BGR2RGB))
             logger.info(
                 f"Image saved to 'data/{time.strftime('%Y-%m-%d_%H-%M-%S')}/camera.jpg'")
 
