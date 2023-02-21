@@ -37,7 +37,8 @@ def calculate_sleep_time(start_time: datetime, average_image_size: int) -> float
     if images_remaining <= 0:
         raise DataFolderFull(average_image_size)
 
-    sleep_time = (time_remaining / images_remaining)
+    # Calculate sleep time (in seconds) but at least 1 second
+    sleep_time = max((time_remaining / images_remaining), 1)
     logger.info(f"Calculated sleep time: {sleep_time}")
 
     if time_remaining < 0:
@@ -100,6 +101,7 @@ def get_image(start_time: datetime) -> None:
 
             time = datetime.now()
 
+            # Check if image is a night image and skip if it is
             if is_night_image(image_cropped):
                 logger.info("Night image detected")
                 sleep(1)
@@ -132,7 +134,7 @@ def get_image(start_time: datetime) -> None:
                 start_time, int(average_image_size))
 
             # Sleep
-            sleep(max(sleep_time, 1))
+            sleep(sleep_time)
         except ExecutionTimeExceeded:
             logger.info("Execution time exceeded")
             break
