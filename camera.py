@@ -6,22 +6,15 @@ from exceptions import DataFolderFull, ExecutionTimeExceeded
 from setup_logging import get_logger
 from datetime import datetime
 from constants import MAX_EXECUTION_TIME, MAX_SIZE_DATA
-from helpers import get_path_size
+from helpers import check_time_remaining, get_path_size
 from math import floor
 
 logger = get_logger(__name__)
 
 
-def check_time_remaining(start_time: datetime) -> float:
-    time_remaining = MAX_EXECUTION_TIME - \
-        (datetime.now() - start_time).total_seconds()
-    logger.info(f"Time remaining: {time_remaining}")
-    return time_remaining
-
-
 def check_data_folder_space_remaining() -> int:
     data_folder_space_remaining = MAX_SIZE_DATA - get_path_size("data")
-    logger.info(
+    logger.debug(
         f"Space remaining in data folder: {data_folder_space_remaining}")
     return data_folder_space_remaining
 
@@ -32,14 +25,14 @@ def calculate_sleep_time(start_time: datetime, average_image_size: int) -> float
     data_folder_space_remaining = check_data_folder_space_remaining()
     images_remaining = floor(data_folder_space_remaining /
                              average_image_size)
-    logger.info(f"Images remaining: {images_remaining}")
+    logger.debug(f"Images remaining: {images_remaining}")
 
     if images_remaining <= 0:
         raise DataFolderFull(average_image_size)
 
     # Calculate sleep time (in seconds) but at least 1 second
     sleep_time = max((time_remaining / images_remaining), 1)
-    logger.info(f"Calculated sleep time: {sleep_time}")
+    logger.debug(f"Calculated sleep time: {sleep_time}")
 
     if time_remaining < 0:
         raise ExecutionTimeExceeded
@@ -62,8 +55,7 @@ def is_night_image(cropped_image: Mat) -> bool:
 def get_debug_image() -> Mat:
     # Get random image from debug-images folder
     file_name = choice(listdir("debug-images"))
-    image = cvtColor(
-        imread(f"debug-images/{file_name}"), COLOR_RGB2BGR)
+    image = imread(f"debug-images/{file_name}")
     logger.info(f"Image loaded from 'debug-images/{file_name}'")
 
     return image
@@ -84,7 +76,7 @@ def get_image(start_time: datetime) -> None:
         try:
             # Wait until there is any space in the data folder
             while check_data_folder_space_remaining() <= 0:
-                logger.info("Waiting for data folder to have space")
+                logger.debug("Waiting for data folder to have space")
                 if check_time_remaining(start_time) <= 1:
                     raise ExecutionTimeExceeded
                 sleep(1)
@@ -108,16 +100,17 @@ def get_image(start_time: datetime) -> None:
                 continue
 
             # Save image to data folder
-            makedirs("data/" + time.strftime("%Y-%m-%d_%H-%M-%S"))
+            folder_name = f"data/{time.strftime('%Y-%m-%d_%H-%M-%S-%f')}"
+            makedirs(folder_name)
             imwrite(
-                f"data/{time.strftime('%Y-%m-%d_%H-%M-%S')}/camera.jpg", cvtColor(image_cropped, COLOR_BGR2RGB))
+                f"{folder_name}/camera.jpg", image_cropped)
             logger.info(
-                f"Image saved to 'data/{time.strftime('%Y-%m-%d_%H-%M-%S')}/camera.jpg'")
+                f"Image saved to '{folder_name}/camera.jpg'")
 
             # Update the average image size
             size_of_image = path.getsize(
-                f"data/{time.strftime('%Y-%m-%d_%H-%M-%S')}/camera.jpg")
-            logger.info(f"Size of last saved image: {size_of_image}")
+                f"{folder_name}/camera.jpg")
+            logger.debug(f"Size of last saved image: {size_of_image}")
             sum_image_sizes += size_of_image
             image_count += 1
             average_image_size = sum_image_sizes / image_count
@@ -139,4 +132,7 @@ def get_image(start_time: datetime) -> None:
             logger.info("Execution time exceeded")
             break
         except Exception as e:
-            logger.exception(e)
+            logger.error(f"Error while getting image: {e}")
+
+    logger.info(
+        f"Camera thread finished: {image_count} images saved, {sum_image_sizes} bytes total")

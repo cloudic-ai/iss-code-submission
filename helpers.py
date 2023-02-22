@@ -1,4 +1,12 @@
+from datetime import datetime
 from os import makedirs, path, walk
+from constants import MAX_EXECUTION_TIME
+
+
+def check_time_remaining(start_time: datetime) -> float:
+    time_remaining = MAX_EXECUTION_TIME - \
+        (datetime.now() - start_time).total_seconds()
+    return time_remaining
 
 
 def get_path_size(start_path: str):
