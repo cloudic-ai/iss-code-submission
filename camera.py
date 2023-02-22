@@ -111,7 +111,7 @@ def get_image(start_time: datetime) -> None:
                 sleep(1)
 
             # Get image
-            image = get_debug_image()
+            image = take_picture(camera)
 
             # Take a square with the edge length equal to the height of the image from the center of the image
             y1 = 0
