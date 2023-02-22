@@ -7,6 +7,7 @@ base_folder = Path(__file__).parent.resolve()
 logs_folder = base_folder / "logs"
 data_folder = base_folder / "data"
 tmp_folder = base_folder / "tmp"
+models_folder = base_folder / "models"
 
 
 def check_time_remaining(start_time: datetime) -> float:

@@ -3,17 +3,16 @@ from os import listdir, path, remove
 from time import sleep
 from cv2 import COLOR_GRAY2RGB, INTER_AREA, Mat, cvtColor, imread, imwrite, resize
 from constants import MASKED_IMAGE_NAME, ORIGINAL_IMAGE_NAME
-from helpers import check_time_remaining, data_folder
-import tensorflow as tf
+from helpers import check_time_remaining, data_folder, models_folder
+import tensorflow.lite as tf_lite
 import numpy as np
-from models.AE import AE, BinaryFN, BinaryFP, BinaryTN, BinaryTP
 from setup_logging import get_logger
 
 
 logger = get_logger(__name__)
 
 
-def create_cloud_mask(image: Mat, model: AE) -> Mat:
+def create_cloud_mask(image: Mat, interpreter) -> Mat:
     logger.info("Creating cloud mask")
 
     resized = resize(image, (256, 256), interpolation=INTER_AREA)
@@ -21,7 +20,7 @@ def create_cloud_mask(image: Mat, model: AE) -> Mat:
     input_image = np.reshape(
         resized, (1, resized.shape[0], resized.shape[1], 3))
 
-    result = model.predict(input_image)
+    result = interpreter.run(input_image)[0]
 
     output_image = np.reshape(result, (resized.shape[0], resized.shape[1], 1))
 
@@ -45,18 +44,12 @@ def apply_cloud_mask(image: Mat, cloud_mask: Mat) -> Mat:
 def compress(start_time: datetime) -> None:
     # Initialize model
     try:
-        model = AE()
-        model.build((None, 256, 256, 3))
-        model.load_weights("models/checkpoint-ae.h5")
-        optimizer = tf.keras.optimizers.get(
-            {"class_name": "Adam", "config": {"learning_rate": 1e-3}})
-        loss_fn = tf.keras.losses.get("MeanSquaredError")
-        model.compile(loss=loss_fn,
-                      optimizer=optimizer,
-                      metrics=[BinaryTP(),
-                               BinaryFP(),
-                               BinaryTN(),
-                               BinaryFN()])
+        from PIL import Image
+        from pycoral.utils.edgetpu import make_interpreter
+
+        interpreter = make_interpreter(
+            f"{models_folder}/ae_tf_lite_model.tflite")
+        interpreter.allocate_tensors()
     except Exception as e:
         # In case the model fails to load, shut down the image processing thread (other threads will continue)
         logger.error(f"Error while loading model: {e}")
@@ -93,14 +86,7 @@ def compress(start_time: datetime) -> None:
                         f"{data_folder}/{folder}/{ORIGINAL_IMAGE_NAME}")
 
                     # Create cloud mask
-                    cloud_mask = create_cloud_mask(image, model)
-
-                    # Scale values from 0 to 255 (because result of model is between 0 and 1)
-                    # cloud_mask_scaled = cloud_mask * 255  # type: ignore
-
-                    # Save cloud mask
-                    # logger.info(f"Saving cloud mask for '{folder}/{ORIGINAL_IMAGE_NAME}'")
-                    # imwrite(f"{data_folder}/{folder}/{MASK_NAME}", cvtColor(cloud_mask_scaled, COLOR_GRAY2RGB))
+                    cloud_mask = create_cloud_mask(image, interpreter)
 
                     # Apply cloud mask
                     image_masked = apply_cloud_mask(image, cloud_mask)
