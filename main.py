@@ -31,7 +31,7 @@ while datetime.now() - start_time < timedelta(seconds=MAX_EXECUTION_TIME) and al
         cloud_detection_thread.join()
         alive = False
     except CameraNotAvailable:
-        logger.error("Camera not available")
+        logger.info("Camera not available")
         alive = False
     except (KeyboardInterrupt, SystemExit):
         logger.info("KeyboardInterrupt or SystemExit")
