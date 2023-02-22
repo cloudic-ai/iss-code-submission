@@ -20,7 +20,13 @@ def create_cloud_mask(image: Mat, interpreter) -> Mat:
     input_image = np.reshape(
         resized, (1, resized.shape[0], resized.shape[1], 3))
 
-    result = interpreter.run(input_image)[0]
+    interpreter.set_tensor(interpreter.get_input_details()[
+                           0]['index'], input_image)
+
+    interpreter.invoke()
+
+    result = interpreter.get_tensor(
+        interpreter.get_output_details()[0]['index'])
 
     output_image = np.reshape(result, (resized.shape[0], resized.shape[1], 1))
 
