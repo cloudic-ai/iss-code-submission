@@ -1,8 +1,7 @@
-from os import listdir, makedirs, path, remove
+from os import makedirs, path, remove
 from time import sleep
-from random import choice
 from cv2 import Mat, imread, imwrite
-from exceptions import DataFolderFull, ExecutionTimeExceeded
+from exceptions import CameraNotAvailable, DataFolderFull, ExecutionTimeExceeded
 from setup_logging import get_logger
 from datetime import datetime
 from constants import MAX_SIZE_DATA, ORIGINAL_IMAGE_NAME
@@ -53,9 +52,6 @@ def is_night_image(cropped_image: Mat) -> bool:
 
 
 def take_picture(camera) -> Mat:
-    if camera is None:
-        return get_debug_image()
-
     time = datetime.now()
     image_path = f"{tmp_folder}/{time.strftime('%Y-%m-%d_%H-%M-%S-%f')}.jpg"
 
@@ -67,15 +63,6 @@ def take_picture(camera) -> Mat:
 
     # Delete image
     remove(image_path)
-
-    return image
-
-
-def get_debug_image() -> Mat:
-    # Get random image from debug-images folder
-    file_name = choice(listdir("debug-images"))
-    image = imread(f"debug-images/{file_name}")
-    logger.info(f"Image loaded from 'debug-images/{file_name}'")
 
     return image
 
@@ -93,10 +80,9 @@ def get_image(start_time: datetime) -> None:
         from picamera import PiCamera
         camera = PiCamera()
     except Exception as e:
-        # In case the camera is not available, use debug images
+        # In case the camera is not available, st
         logger.error(f"Error while importing PiCamera: {e}")
-        logger.info("Using debug images")
-        camera = None
+        raise CameraNotAvailable
 
     sum_image_sizes = 0
     image_count = 0

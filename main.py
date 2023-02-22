@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from threading import Thread
 from camera import get_image
+from exceptions import CameraNotAvailable
 from image_processing import compress
 from constants import MAX_EXECUTION_TIME
 from helpers import make_sure_path_exists, data_folder, tmp_folder
@@ -28,6 +29,9 @@ while datetime.now() - start_time < timedelta(seconds=MAX_EXECUTION_TIME) and al
         cloud_detection_thread.start()
         camera_thread.join()
         cloud_detection_thread.join()
+        alive = False
+    except CameraNotAvailable:
+        logger.error("Camera not available")
         alive = False
     except (KeyboardInterrupt, SystemExit):
         logger.info("KeyboardInterrupt or SystemExit")

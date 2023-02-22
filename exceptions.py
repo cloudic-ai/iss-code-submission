@@ -5,3 +5,7 @@ class DataFolderFull(Exception):
 
 class ExecutionTimeExceeded(Exception):
     pass
+
+
+class CameraNotAvailable(Exception):
+    pass
