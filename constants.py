@@ -1,5 +1,5 @@
 MAX_EXECUTION_TIME = 60 * 60 * 2.5  # 3 hours
-MAX_SIZE_DATA: int = 2 * 1000 * 1000 * 1000  # 3 GB
+MAX_SIZE_DATA: int = 25 * 100 * 1000 * 1000  # 2.5 GB
 
 ORIGINAL_IMAGE_NAME = "original.png"
 MASK_NAME = "mask.png"
