@@ -2,6 +2,7 @@ from datetime import datetime
 from os import listdir, path
 from time import sleep
 from cv2 import COLOR_GRAY2RGB, INTER_AREA, Mat, cvtColor, imread, imwrite, resize
+from constants import MASKED_IMAGE_NAME, ORIGINAL_IMAGE_NAME
 from helpers import check_time_remaining
 import tensorflow as tf
 import numpy as np
@@ -27,6 +28,20 @@ def create_cloud_mask(image: Mat, model: AE) -> Mat:
     return output_image
 
 
+def apply_cloud_mask(image: Mat, cloud_mask: Mat) -> Mat:
+    logger.info("Applying cloud mask")
+
+    # Scale mask to size of image
+    cloud_mask_scaled = resize(
+        cloud_mask, (image.shape[0], image.shape[1]), interpolation=INTER_AREA)
+    cloud_mask_scaled = cvtColor(cloud_mask_scaled, COLOR_GRAY2RGB)
+
+    # Apply cloud mask
+    masked_image = np.multiply(image, cloud_mask_scaled)
+
+    return masked_image
+
+
 def compress(start_time: datetime) -> None:
     # Initialize model
     try:
@@ -50,51 +65,57 @@ def compress(start_time: datetime) -> None:
         return
     logger.info("Model initialized")
 
-    # Get directories in Data folder (excluding the last one, because that one might be incomplete)
-    image_folders = listdir("data")[:-1]
+    # Get directories in Data folder (excluding the last two, because they might be incomplete)
+    image_folders = listdir("data")[:-2]
     processed_images = []
     skipped_images = []
 
     while check_time_remaining(start_time) > 0:
         for folder in image_folders:
             if folder not in processed_images and folder not in skipped_images:
-                if path.isfile(f"data/{folder}/cloud_mask.jpg"):
+                if path.isfile(f"data/{folder}/{MASKED_IMAGE_NAME}"):
                     logger.info(
-                        f"Skipping image '{folder}/camera.jpg' because cloud mask already exists")
+                        f"Skipping image '{folder}/{ORIGINAL_IMAGE_NAME}' because it seems to have already been processed")
                     skipped_images.append(folder)
                     continue
 
                 # Wait for image to be fully written to disk
-                while not path.isfile(f"data/{folder}/camera.jpg") or path.getsize(f"data/{folder}/camera.jpg") == 0:
+                while not path.isfile(f"data/{folder}/{ORIGINAL_IMAGE_NAME}") or path.getsize(f"data/{folder}/{ORIGINAL_IMAGE_NAME}") == 0:
                     sleep(1)
 
                 try:
-                    logger.info(f"Processing image '{folder}/camera.jpg'")
+                    logger.info(
+                        f"Processing image '{folder}/{ORIGINAL_IMAGE_NAME}'")
 
                     # Load image
-                    image = imread(f"data/{folder}/camera.jpg")
+                    image = imread(f"data/{folder}/{ORIGINAL_IMAGE_NAME}")
 
                     # Create cloud mask
                     cloud_mask = create_cloud_mask(image, model)
+
                     # Scale values from 0 to 255 (because result of model is between 0 and 1)
-                    cloud_mask_scaled = cloud_mask * 255  # type: ignore
+                    # cloud_mask_scaled = cloud_mask * 255  # type: ignore
 
                     # Save cloud mask
-                    logger.info(f"Saving cloud mask for '{folder}/camera.jpg'")
-                    imwrite(f"data/{folder}/cloud_mask.jpg", cvtColor(
-                        cloud_mask_scaled, COLOR_GRAY2RGB))
+                    # logger.info(f"Saving cloud mask for '{folder}/{ORIGINAL_IMAGE_NAME}'")
+                    # imwrite(f"data/{folder}/{MASK_NAME}", cvtColor(cloud_mask_scaled, COLOR_GRAY2RGB))
+
+                    # Apply cloud mask
+                    image_masked = apply_cloud_mask(image, cloud_mask)
+                    imwrite(f"data/{folder}/{MASKED_IMAGE_NAME}", image_masked)
                 except Exception as e:
                     # In case the cloud mask fails to create, skip this image
                     logger.error(
-                        f"Error while processing image '{folder}/camera.jpg': {e}")
-                    logger.info(f"Skipping image '{folder}/camera.jpg'")
+                        f"Error while processing image '{folder}/{ORIGINAL_IMAGE_NAME}': {e}")
+                    logger.info(
+                        f"Skipping image '{folder}/{ORIGINAL_IMAGE_NAME}'")
                     skipped_images.append(folder)
                     continue
 
                 processed_images.append(folder)
 
         # Check if new images have been added
-        new_image_folders = listdir("data")[:-1]
+        new_image_folders = listdir("data")[:-2]
         for folder in new_image_folders:
             if folder not in image_folders:
                 image_folders.append(folder)

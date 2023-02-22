@@ -1,11 +1,11 @@
 from os import listdir, makedirs, path
 from time import sleep
 from random import choice
-from cv2 import Mat, cvtColor, imread, imwrite, COLOR_BGR2RGB, COLOR_RGB2BGR
+from cv2 import Mat, imread, imwrite
 from exceptions import DataFolderFull, ExecutionTimeExceeded
 from setup_logging import get_logger
 from datetime import datetime
-from constants import MAX_EXECUTION_TIME, MAX_SIZE_DATA
+from constants import MAX_SIZE_DATA, ORIGINAL_IMAGE_NAME
 from helpers import check_time_remaining, get_path_size
 from math import floor
 
@@ -103,13 +103,13 @@ def get_image(start_time: datetime) -> None:
             folder_name = f"data/{time.strftime('%Y-%m-%d_%H-%M-%S-%f')}"
             makedirs(folder_name)
             imwrite(
-                f"{folder_name}/camera.jpg", image_cropped)
+                f"{folder_name}/{ORIGINAL_IMAGE_NAME}", image_cropped)
             logger.info(
-                f"Image saved to '{folder_name}/camera.jpg'")
+                f"Image saved to '{folder_name}/{ORIGINAL_IMAGE_NAME}'")
 
             # Update the average image size
             size_of_image = path.getsize(
-                f"{folder_name}/camera.jpg")
+                f"{folder_name}/{ORIGINAL_IMAGE_NAME}")
             logger.debug(f"Size of last saved image: {size_of_image}")
             sum_image_sizes += size_of_image
             image_count += 1
