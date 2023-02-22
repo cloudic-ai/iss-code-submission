@@ -4,7 +4,6 @@ from time import sleep
 from cv2 import COLOR_GRAY2RGB, INTER_AREA, Mat, cvtColor, imread, imwrite, resize
 from constants import MASKED_IMAGE_NAME, ORIGINAL_IMAGE_NAME
 from helpers import check_time_remaining, data_folder, models_folder
-import tensorflow.lite as tf_lite
 import numpy as np
 from setup_logging import get_logger
 
