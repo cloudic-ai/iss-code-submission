@@ -1,6 +1,12 @@
 from datetime import datetime
 from os import makedirs, path, walk
 from constants import MAX_EXECUTION_TIME
+from pathlib import Path
+
+base_folder = Path(__file__).parent.resolve()
+logs_folder = base_folder / "logs"
+data_folder = base_folder / "data"
+tmp_folder = base_folder / "tmp"
 
 
 def check_time_remaining(start_time: datetime) -> float:
@@ -9,7 +15,7 @@ def check_time_remaining(start_time: datetime) -> float:
     return time_remaining
 
 
-def get_path_size(start_path: str):
+def get_path_size(start_path: Path):
     total_size = 0
     for dirpath, dirnames, filenames in walk(start_path):
         for f in filenames:
@@ -18,6 +24,6 @@ def get_path_size(start_path: str):
     return total_size
 
 
-def make_sure_path_exists(_path: str):
+def make_sure_path_exists(_path: Path):
     if not path.exists(_path):
         makedirs(_path)

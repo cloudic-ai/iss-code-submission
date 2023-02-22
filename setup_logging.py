@@ -1,12 +1,12 @@
 from datetime import datetime
 from logging import Logger, getLogger, basicConfig, DEBUG, INFO
-from helpers import make_sure_path_exists
+from helpers import make_sure_path_exists, logs_folder
 
 
 def setup_logging(start_time: datetime):
-    make_sure_path_exists('logs')
+    make_sure_path_exists(logs_folder)
 
-    basicConfig(filename='logs/' + start_time.strftime("%Y-%m-%d_%H-%M-%S") + '.log',
+    basicConfig(filename=f"{logs_folder}/{start_time.strftime('%Y-%m-%d_%H-%M-%S')}.log",
                 filemode='a',
                 datefmt='%H:%M:%S',
                 level=INFO)

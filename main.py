@@ -3,7 +3,7 @@ from threading import Thread
 from camera import get_image
 from image_processing import compress
 from constants import MAX_EXECUTION_TIME
-from helpers import make_sure_path_exists
+from helpers import make_sure_path_exists, data_folder
 from setup_logging import setup_logging, get_logger
 
 start_time = datetime.now()
@@ -16,7 +16,7 @@ logger.info("Starting at %s", start_time)
 
 alive = True
 
-make_sure_path_exists('data')
+make_sure_path_exists(data_folder)
 
 while datetime.now() - start_time < timedelta(seconds=MAX_EXECUTION_TIME) and alive:
     try:

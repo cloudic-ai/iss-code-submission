@@ -3,7 +3,7 @@ from os import listdir, path, remove
 from time import sleep
 from cv2 import COLOR_GRAY2RGB, INTER_AREA, Mat, cvtColor, imread, imwrite, resize
 from constants import MASKED_IMAGE_NAME, ORIGINAL_IMAGE_NAME
-from helpers import check_time_remaining
+from helpers import check_time_remaining, data_folder
 import tensorflow as tf
 import numpy as np
 from models.AE import AE, BinaryFN, BinaryFP, BinaryTN, BinaryTP
@@ -66,22 +66,22 @@ def compress(start_time: datetime) -> None:
     logger.info("Model initialized")
 
     # Get image directories in data folder (excluding the last one, because it might be incomplete)
-    image_folders = sorted(listdir("data"))[:-1]
+    image_folders = sorted(listdir(data_folder))[:-1]
     processed_images = []
     skipped_images = []
 
     while check_time_remaining(start_time) > 0:
         for folder in image_folders:
             if folder not in processed_images and folder not in skipped_images:
-                if path.isfile(f"data/{folder}/{MASKED_IMAGE_NAME}") or not path.isfile(f"data/{folder}/{ORIGINAL_IMAGE_NAME}"):
+                if path.isfile(f"{data_folder}/{folder}/{MASKED_IMAGE_NAME}") or not path.isfile(f"{data_folder}/{folder}/{ORIGINAL_IMAGE_NAME}"):
                     logger.info(
                         f"Skipping image '{folder}/{ORIGINAL_IMAGE_NAME}' because it seems to have already been processed")
                     skipped_images.append(folder)
                     continue
 
-                while not path.getsize(f"data/{folder}/{ORIGINAL_IMAGE_NAME}") > 0 or imread(f"data/{folder}/{ORIGINAL_IMAGE_NAME}") is None:
+                while not path.getsize(f"{data_folder}/{folder}/{ORIGINAL_IMAGE_NAME}") > 0 or imread(f"{data_folder}/{folder}/{ORIGINAL_IMAGE_NAME}") is None:
                     logger.info(
-                        f"Waiting for image 'data/{folder}/{ORIGINAL_IMAGE_NAME}' to be fully written to disk")
+                        f"Waiting for image '{data_folder}/{folder}/{ORIGINAL_IMAGE_NAME}' to be fully written to disk")
                     sleep(1)
 
                 try:
@@ -89,7 +89,8 @@ def compress(start_time: datetime) -> None:
                         f"Processing image '{folder}/{ORIGINAL_IMAGE_NAME}'")
 
                     # Load image
-                    image = imread(f"data/{folder}/{ORIGINAL_IMAGE_NAME}")
+                    image = imread(
+                        f"{data_folder}/{folder}/{ORIGINAL_IMAGE_NAME}")
 
                     # Create cloud mask
                     cloud_mask = create_cloud_mask(image, model)
@@ -99,16 +100,17 @@ def compress(start_time: datetime) -> None:
 
                     # Save cloud mask
                     # logger.info(f"Saving cloud mask for '{folder}/{ORIGINAL_IMAGE_NAME}'")
-                    # imwrite(f"data/{folder}/{MASK_NAME}", cvtColor(cloud_mask_scaled, COLOR_GRAY2RGB))
+                    # imwrite(f"{data_folder}/{folder}/{MASK_NAME}", cvtColor(cloud_mask_scaled, COLOR_GRAY2RGB))
 
                     # Apply cloud mask
                     image_masked = apply_cloud_mask(image, cloud_mask)
-                    imwrite(f"data/{folder}/{MASKED_IMAGE_NAME}", image_masked)
+                    imwrite(
+                        f"{data_folder}/{folder}/{MASKED_IMAGE_NAME}", image_masked)
 
                     # Delete original image
                     logger.info(
                         f"Deleting original image '{folder}/{ORIGINAL_IMAGE_NAME}'")
-                    remove(f"data/{folder}/{ORIGINAL_IMAGE_NAME}")
+                    remove(f"{data_folder}/{folder}/{ORIGINAL_IMAGE_NAME}")
                 except Exception as e:
                     # In case the cloud mask fails to create, skip this image
                     logger.error(
@@ -121,7 +123,7 @@ def compress(start_time: datetime) -> None:
                 processed_images.append(folder)
 
         # Check if new images have been added
-        new_image_folders = sorted(listdir("data"))[:-1]
+        new_image_folders = sorted(listdir(data_folder))[:-1]
         for folder in new_image_folders:
             if folder not in image_folders:
                 image_folders.append(folder)
