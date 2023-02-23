@@ -8,9 +8,9 @@ The goal for this code is to reliably take images of the Earth from the ISS in a
 
 ## Implementation
 
-The code is split into three main files: 'main.py', 'camera.py' and 'image_processing.py'. The 'main.py' file contains the main loop of the program, which starts two separate threads for taking images and processing them. The 'main.py' also catches and logs any exceptions that might occur and restarts the program if needed. The 'camera.py' file contains the code for the image taking thread, which also filters out night images and makes sure the maximum file size is not exceeded. Lastly the 'image_processing.py' file contains the code for the image processing thread, which is responsible for computing a rough cloud mask and applying it, which reduces the file size of the image.
+The code is split into three main files: `main.py`, `camera.py` and `image_processing.py`. The `main.py` file contains the main loop of the program, which starts two separate threads for taking images and processing them. The `main.py` also catches and logs any exceptions that might occur and restarts the program if needed. The `camera.py` file contains the code for the image taking thread, which also filters out night images and makes sure the maximum file size is not exceeded. Lastly the `image_processing.py` file contains the code for the image processing thread, which is responsible for computing a rough cloud mask and applying it, which reduces the file size of the image.
 
 ## Usage
 
 1. Clone the repository
-2. Run 'python3 main.py'
+2. Run `python3 main.py`
