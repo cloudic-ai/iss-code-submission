@@ -10,10 +10,11 @@ def setup_logging(start_time: datetime):
                 filemode='a',
                 datefmt='%H:%M:%S',
                 # Format
-                # Time (HH:MM:SS:MS) - Level - Subsystem - Message
+                # Time (HH:MM:SS:MS): Level: Subsystem: Message
                 format='%(asctime)s.%(msecs)03d: %(levelname)s: %(name)s: %(message)s',
                 level=INFO)
 
 
+# This function might seem unnecessary, but it makes changing the logger naming easier
 def get_logger(subsystem: str) -> Logger:
     return getLogger(subsystem)

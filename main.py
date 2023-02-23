@@ -22,6 +22,7 @@ make_sure_path_exists(tmp_folder)
 
 while datetime.now() - start_time < timedelta(seconds=MAX_EXECUTION_TIME) and alive:
     try:
+        # The taking and processing of images is done in separate threads
         logger.info("Starting threads")
         camera_thread = Thread(target=get_image, args=[start_time])
         cloud_detection_thread = Thread(

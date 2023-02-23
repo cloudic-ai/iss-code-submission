@@ -55,13 +55,13 @@ def take_picture(camera) -> Mat:
     time = datetime.now()
     image_path = f"{tmp_folder}/{time.strftime('%Y-%m-%d_%H-%M-%S-%f')}.jpg"
 
-    # Take picture
+    # Take a picture and save it to the tmp folder
     camera.capture(image_path)
 
-    # Load image
+    # Load the image
     image = imread(image_path)
 
-    # Delete image
+    # Delete the image
     remove(image_path)
 
     return image
@@ -69,18 +69,22 @@ def take_picture(camera) -> Mat:
 
 def get_image(start_time: datetime) -> None:
     """
-    Get image from camera and save it to the data folder. Sleep until the data folder has enough space for the next image.
+    This functions takes pictures with the pi camera and saves them to the data folder.
 
-    Notes:
-    - The function will save at most one image per second.
-    - The function might exceed the MAX_DATA_FOLDER_SIZE by up to the size of one image.
+    It makes sure that:
+    - the data folder does not exceed MAX_SIZE_DATA (might exceed by up to one image)
+    - it does not exceed MAX_EXECUTION_TIME (might exceed by a few seconds)
+    - the pictures are taken in regular intervals, so that they are varied
+    - at most one image is taken per second
+    - no pictures are taken at night
     """
+
     # Initialize camera
     try:
         from picamera import PiCamera
         camera = PiCamera()
     except Exception as e:
-        # In case the camera is not available, st
+        # In case the camera is not available, shut down the camera thread (other threads will continue)
         logger.error(f"Error while importing PiCamera: {e}")
         logger.info(
             "The program will continue without the camera thread")
@@ -98,7 +102,7 @@ def get_image(start_time: datetime) -> None:
                     raise ExecutionTimeExceeded
                 sleep(1)
 
-            # Get image
+            # Get a new image
             image = take_picture(camera)
 
             # Take a square with the edge length equal to the height of the image from the center of the image
@@ -149,7 +153,7 @@ def get_image(start_time: datetime) -> None:
             logger.info("Execution time exceeded")
             break
         except Exception as e:
-            logger.error(f"Error while getting image: {e}")
+            logger.error(f"While getting image: {e}")
 
     logger.info(
         f"Camera thread finished: {image_count} images saved, {sum_image_sizes} bytes total")
