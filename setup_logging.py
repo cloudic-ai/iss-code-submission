@@ -9,8 +9,11 @@ def setup_logging(start_time: datetime):
     basicConfig(filename=f"{logs_folder}/{start_time.strftime('%Y-%m-%d_%H-%M-%S')}.log",
                 filemode='a',
                 datefmt='%H:%M:%S',
+                # Format
+                # Time (HH:MM:SS:MS) - Level - Subsystem - Message
+                format='%(asctime)s.%(msecs)03d: %(levelname)s: %(name)s: %(message)s',
                 level=INFO)
 
 
 def get_logger(subsystem: str) -> Logger:
-    return getLogger('deecream.' + subsystem)
+    return getLogger(subsystem)

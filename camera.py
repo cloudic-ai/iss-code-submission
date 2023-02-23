@@ -82,7 +82,9 @@ def get_image(start_time: datetime) -> None:
     except Exception as e:
         # In case the camera is not available, st
         logger.error(f"Error while importing PiCamera: {e}")
-        raise CameraNotAvailable
+        logger.info(
+            "The program will continue without the camera thread")
+        return
 
     sum_image_sizes = 0
     image_count = 0
