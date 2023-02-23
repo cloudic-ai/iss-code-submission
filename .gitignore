@@ -10,5 +10,8 @@ logs/
 # Ignore data
 data/
 
+# Ignore tmp
+tmp/
+
 # Ignore .vscode
 .vscode/
